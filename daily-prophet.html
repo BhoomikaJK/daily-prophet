@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Daily Prophet</title>
+<link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=IM+Fell+English:ital@0;1&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════
+   ROOT & RESET
+══════════════════════════════════════════ */
+:root {
+  --paper: #f2e8d0;
+  --paper-dark: #e0d0b0;
+  --paper-deep: #c8b888;
+  --ink: #1a1008;
+  --ink-mid: #2e1e0a;
+  --ink-light: #4a3418;
+  --red: #8b1a1a;
+  --gold: #b8860b;
+  --column-gap: 18px;
+  --border: #3a2808;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: #1a1208;
+  font-family: 'Libre Baskerville', Georgia, serif;
+  color: var(--ink);
+  min-height: 100vh;
+  cursor: default;
+}
+
+/* ══════════════════════════════════════════
+   LOADING SCREEN
+══════════════════════════════════════════ */
+#loading-screen {
+  position: fixed; inset: 0; z-index: 9999;
+  background: #0e0a04;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 28px;
+  transition: opacity 1s;
+}
+#loading-screen.fade-out { opacity: 0; pointer-events: none; }
+
+.loading-quill {
+  position: relative;
+  width: 80px; height: 120px;
+}
+.quill-svg { width: 80px; height: 120px; animation: quillWrite 1.2s ease-in-out infinite; }
+@keyframes quillWrite {
+  0%,100% { transform: rotate(-15deg) translateY(0); }
+  50%      { transform: rotate(-5deg) translateY(8px); }
+}
+.ink-line {
+  position: absolute; bottom: 10px; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(to right, transparent, #b8860b, transparent);
+  animation: inkSpread 1.2s ease-in-out infinite;
+  transform-origin: left;
+}
+@keyframes inkSpread {
+  0%   { transform: scaleX(0); opacity: 0; }
+  50%  { transform: scaleX(1); opacity: 1; }
+  100% { transform: scaleX(0); opacity: 0; }
+}
+
+.loading-title {
+  font-family: 'UnifrakturMaguntia', cursive;
+  font-size: clamp(28px,5vw,48px);
+  color: #d4a830;
+  text-shadow: 0 0 30px rgba(212,168,48,0.4);
+  letter-spacing: 0.03em;
+}
+.loading-status {
+  font-family: 'IM Fell English', serif;
+  font-style: italic;
+  font-size: 15px;
+  color: #6a4a20;
+  letter-spacing: 0.08em;
+}
+.loading-dots span {
+  display: inline-block;
+  animation: dotBlink 1.2s ease-in-out infinite;
+}
+.loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dotBlink { 0%,80%,100%{opacity:0.2} 40%{opacity:1} }
+
+/* ══════════════════════════════════════════
+   NEWSPAPER OUTER WRAPPER
+══════════════════════════════════════════ */
+#newspaper {
+  max-width: 1100px;
+  margin: 32px auto;
+  background: var(--paper);
+  box-shadow:
+    0 0 0 1px #8a6030,
+    0 0 0 4px #6a4020,
+    0 4px 60px rgba(0,0,0,0.8),
+    inset 0 0 80px rgba(100,60,10,0.15);
+  position: relative;
+  padding: 0 0 40px;
+}
+
+/* Paper texture overlay */
+#newspaper::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 24px, rgba(40,20,5,0.03) 24px, rgba(40,20,5,0.03) 25px),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 1;
+  border-radius: 0;
+}
+
+/* ══════════════════════════════════════════
+   MASTHEAD
+══════════════════════════════════════════ */
+.masthead {
+  border-bottom: 4px double var(--border);
+  padding: 16px 32px 12px;
+  position: relative;
+  background: linear-gradient(to bottom, #efe3c0, var(--paper));
+  z-index: 2;
+}
+.masthead-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-family: 'IM Fell English', serif;
+  font-style: italic;
+  font-size: 11px;
+  color: var(--ink-light);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+}
+.masthead-motto {
+  font-style: italic;
+  color: var(--ink-mid);
+}
+.masthead-price { text-align: right; }
+
+.masthead-nameplate {
+  text-align: center;
+  line-height: 0.9;
+  padding: 8px 0 4px;
+}
+.masthead-nameplate h1 {
+  font-family: 'UnifrakturMaguntia', cursive;
+  font-size: clamp(42px, 8vw, 88px);
+  color: var(--ink);
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.15);
+  letter-spacing: 0.02em;
+}
+.masthead-nameplate .edition-line {
+  font-family: 'IM Fell English', serif;
+  font-size: clamp(9px,1.5vw,12px);
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--ink-light);
+  margin-top: 4px;
+}
+
+.masthead-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+  font-family: 'IM Fell English', serif;
+  font-size: 11px;
+  color: var(--ink-light);
+}
+#paper-date { font-style: italic; }
+.weather-line { font-style: italic; }
+
+/* BREAKING NEWS TICKER */
+.breaking-ticker {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 5px 0;
+  overflow: hidden;
+  position: relative;
+  z-index: 2;
+  border-bottom: 2px solid var(--gold);
+}
+.ticker-inner {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.ticker-label {
+  background: var(--red);
+  color: #fff;
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  padding: 0 12px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+  height: 24px;
+  display: flex; align-items: center;
+}
+.ticker-scroll {
+  overflow: hidden;
+  flex: 1;
+}
+.ticker-text {
+  font-family: 'IM Fell English', serif;
+  font-style: italic;
+  font-size: 12px;
+  white-space: nowrap;
+  animation: tickerScroll 35s linear infinite;
+  display: inline-block;
+  padding-left: 100%;
+  color: #e8d8b0;
+}
+@keyframes tickerScroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-100%); }
+}
+
+/* ══════════════════════════════════════════
+   NEWSPAPER BODY
+══════════════════════════════════════════ */
+.paper-body {
+  padding: 20px 28px;
+  position: relative;
+  z-index: 2;
+}
+
+/* ══════════════════════════════════════════
+   COLUMN GRID
+══════════════════════════════════════════ */
+.col-grid {
+  display: grid;
+  gap: var(--column-gap);
+  border-bottom: 2px double var(--border);
+  padding-bottom: 18px;
+  margin-bottom: 18px;
+}
+.col-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.col-grid.cols-2 { grid-template-columns: 2fr 1fr; }
+.col-grid.cols-2-rev { grid-template-columns: 1fr 2fr; }
+.col-grid.cols-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+.col-grid.cols-1 { grid-template-columns: 1fr; }
+
+/* Column dividers */
+.col-divider {
+  border-left: 1px solid var(--border);
+  padding-left: var(--column-gap);
+}
+
+/* ══════════════════════════════════════════
+   ARTICLE TYPOGRAPHY
+══════════════════════════════════════════ */
+.article-headline {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900;
+  font-size: clamp(18px, 3vw, 28px);
+  line-height: 1.1;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.article-headline.huge {
+  font-size: clamp(24px, 4.5vw, 42px);
+}
+.article-headline.small {
+  font-size: clamp(14px, 2vw, 18px);
+  font-weight: 700;
+}
+.article-headline.italic-hed {
+  font-style: italic;
+}
+.article-deck {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: clamp(11px, 1.6vw, 14px);
+  color: var(--ink-mid);
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+.article-byline {
+  font-family: 'IM Fell English', serif;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--ink-light);
+  text-transform: uppercase;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 3px 0;
+  margin-bottom: 8px;
+}
+.article-body {
+  font-family: 'Libre Baskerville', serif;
+  font-size: clamp(9.5px, 1.3vw, 12px);
+  line-height: 1.7;
+  color: var(--ink-mid);
+  text-align: justify;
+  hyphens: auto;
+  column-gap: 14px;
+}
+.article-body p + p {
+  text-indent: 1.2em;
+}
+.article-body p:first-child::first-letter {
+  font-family: 'UnifrakturMaguntia', cursive;
+  font-size: 3.2em;
+  float: left;
+  line-height: 0.8;
+  padding: 2px 5px 0 0;
+  color: var(--ink);
+}
+.section-rule {
+  border: none;
+  border-top: 2px double var(--border);
+  margin: 14px 0;
+}
+.section-rule.thin {
+  border-top-width: 1px;
+  border-top-style: solid;
+}
+
+/* ══════════════════════════════════════════
+   "MOVING PHOTOS" — CSS ANIMATED ILLUSTRATIONS
+══════════════════════════════════════════ */
+.moving-photo {
+  width: 100%;
+  border: 2px solid var(--border);
+  background: var(--paper-dark);
+  position: relative;
+  overflow: hidden;
+  margin: 8px 0;
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.15);
+}
+.moving-photo .photo-caption {
+  font-family: 'IM Fell English', serif;
+  font-style: italic;
+  font-size: 9px;
+  color: var(--ink-light);
+  padding: 3px 6px;
+  border-top: 1px solid var(--border);
+  background: rgba(210,190,150,0.5);
+  text-align: center;
+}
+.photo-scene {
+  width: 100%;
+  aspect-ratio: 4/3;
+  position: relative;
+  overflow: hidden;
+  background: var(--paper-dark);
+}
+
+/* SCENE 1: Snape stirs cauldron */
+.scene-cauldron {
+  background: radial-gradient(ellipse at 50% 80%, #2a1a08 0%, #1a0f04 60%, #0a0804 100%);
+}
+.cauldron-body {
+  position: absolute;
+  bottom: 15%; left: 50%; transform: translateX(-50%);
+  width: 55%; height: 40%;
+  background: radial-gradient(ellipse at 40% 40%, #4a3020, #2a1808, #1a0f04);
+  border-radius: 5% 5% 45% 45%;
+  border: 2px solid #8a6030;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5), inset 0 -10px 20px rgba(0,0,0,0.4);
+}
+.cauldron-legs {
+  position: absolute;
+  bottom: 10%; left: 50%; transform: translateX(-50%);
+  width: 60%; height: 10%;
+  display: flex; justify-content: space-between; padding: 0 8%;
+}
+.cauldron-leg {
+  width: 6%; background: #3a2010;
+  border-radius: 2px;
+  transform-origin: top;
+}
+.cauldron-brew {
+  position: absolute;
+  bottom: 30%; left: 50%; transform: translateX(-50%);
+  width: 45%; height: 15%;
+  background: radial-gradient(ellipse, #2a8a3a, #1a5a28, #0a2a14);
+  border-radius: 50%;
+  animation: brewBubble 2s ease-in-out infinite;
+}
+@keyframes brewBubble {
+  0%,100% { transform: translateX(-50%) scaleX(1) scaleY(1); opacity:0.9; }
+  50%      { transform: translateX(-50%) scaleX(1.05) scaleY(1.15); opacity:1; }
+}
+.bubble { 
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(80,200,100,0.8), rgba(20,100,40,0.4));
+  animation: riseUp var(--bd,2s) ease-in infinite;
+  animation-delay: var(--del,0s);
+}
+@keyframes riseUp {
+  0%   { transform: translateY(0) scale(0.5); opacity:0.8; }
+  80%  { opacity:0.6; }
+  100% { transform: translateY(-60px) scale(1.5); opacity:0; }
+}
+.smoke-wisp {
+  position: absolute;
+  bottom: 45%; left: 50%;
+  width: 30%; height: 50%;
+  background: radial-gradient(ellipse at 50% 100%, rgba(180,200,180,0.25), transparent 70%);
+  animation: smokeRise var(--sd,3s) ease-out infinite;
+  animation-delay: var(--del,0s);
+  transform-origin: bottom;
+  border-radius: 50%;
+}
+@keyframes smokeRise {
+  0%   { transform: translateX(-50%) scaleX(0.3) translateY(0) rotate(0deg); opacity:0.6; }
+  50%  { transform: translateX(-50%) scaleX(1) translateY(-20%) rotate(10deg); opacity:0.3; }
+  100% { transform: translateX(-50%) scaleX(1.5) translateY(-60%) rotate(-5deg); opacity:0; }
+}
+.figure-snape {
+  position: absolute;
+  right: 15%; bottom: 18%;
+  width: 18%; height: 55%;
+}
+.snape-body { width:100%; height:100%; background: radial-gradient(ellipse at 50% 20%, #2a2a2a, #0a0a0a); border-radius: 10% 10% 0 0; }
+.snape-arm {
+  position: absolute;
+  top: 30%; right: -30%;
+  width: 40%; height: 8%;
+  background: #1a1a1a;
+  border-radius: 4px;
+  transform-origin: left center;
+  animation: stirArm 2s ease-in-out infinite;
+}
+@keyframes stirArm {
+  0%,100% { transform: rotate(-20deg); }
+  50%      { transform: rotate(20deg); }
+}
+
+/* SCENE 2: Owl in flight */
+.scene-owl {
+  background: radial-gradient(ellipse at 30% 40%, #0a1830 0%, #060c1a 50%, #020408 100%);
+}
+.moon-circle {
+  position: absolute;
+  top: 10%; right: 15%;
+  width: 22%; aspect-ratio:1;
+  background: radial-gradient(circle at 40% 35%, #f0e8c0, #d4c080, #b09040);
+  border-radius: 50%;
+  box-shadow: 0 0 30px rgba(240,220,140,0.4);
+  animation: moonGlow 3s ease-in-out infinite;
+}
+@keyframes moonGlow {
+  0%,100%{box-shadow:0 0 20px rgba(240,220,140,0.3);}
+  50%{box-shadow:0 0 40px rgba(240,220,140,0.6);}
+}
+.star-dot {
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  animation: starTwinkle var(--td,2s) ease-in-out infinite;
+  animation-delay: var(--del,0s);
+}
+@keyframes starTwinkle { 0%,100%{opacity:0.2;} 50%{opacity:1;} }
+.owl-body {
+  position: absolute;
+  animation: owlFly 4s ease-in-out infinite;
+}
+@keyframes owlFly {
+  0%   { left:80%; top:30%; }
+  30%  { left:55%; top:20%; }
+  60%  { left:25%; top:35%; }
+  100% { left:80%; top:30%; }
+}
+.owl-svg { width: 50px; height: 40px; }
+.wing-left, .wing-right {
+  transform-origin: center;
+  animation: wingFlap 0.4s ease-in-out infinite alternate;
+}
+.wing-right { animation-direction: alternate-reverse; }
+@keyframes wingFlap { from{transform:scaleY(1) rotate(-10deg);} to{transform:scaleY(0.3) rotate(10deg);} }
+.castle-silhouette {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 40%;
+  background: #080810;
+  clip-path: polygon(
+    0% 100%, 0% 60%, 3% 60%, 3% 40%, 5% 40%, 5% 45%, 7% 45%, 7% 40%, 9% 40%, 9% 60%,
+    12% 60%, 12% 30%, 13% 30%, 13% 20%, 14% 20%, 14% 30%, 15% 30%, 15% 25%, 16% 25%, 16% 30%,
+    18% 30%, 18% 60%, 22% 60%, 22% 50%, 25% 50%, 25% 60%,
+    30% 60%, 30% 40%, 32% 40%, 32% 35%, 33% 35%, 33% 40%, 35% 40%, 35% 60%,
+    40% 60%, 40% 70%, 45% 70%, 45% 55%, 50% 55%, 50% 70%,
+    55% 70%, 55% 60%, 60% 60%, 60% 45%, 62% 45%, 62% 40%, 63% 40%, 63% 45%, 65% 45%, 65% 60%,
+    70% 60%, 70% 55%, 72% 55%, 72% 50%, 74% 50%, 74% 55%,
+    78% 55%, 78% 60%, 82% 60%, 82% 40%, 84% 40%, 84% 35%, 85% 35%, 85% 40%, 87% 40%, 87% 60%,
+    90% 60%, 90% 65%, 95% 65%, 95% 60%, 97% 60%, 97% 70%, 100% 70%, 100% 100%
+  );
+}
+/* Lit windows */
+.castle-window {
+  position: absolute;
+  background: rgba(255,220,100,0.9);
+  border-radius: 1px;
+  animation: windowFlicker var(--wf,3s) ease-in-out infinite;
+  animation-delay: var(--del,0s);
+}
+@keyframes windowFlicker {
+  0%,100%{opacity:0.9;} 30%{opacity:0.4;} 60%{opacity:1;} 80%{opacity:0.7;}
+}
+
+/* SCENE 3: Quidditch */
+.scene-quidditch {
+  background: radial-gradient(ellipse at 50% 0%, #1a3a6a 0%, #0a2040 50%, #040e20 100%);
+}
+.quidditch-player {
+  position: absolute;
+  animation: flyPath var(--fp,6s) ease-in-out infinite;
+  animation-delay: var(--del,0s);
+}
+@keyframes flyPath {
+  0%   { left:10%; top:30%; transform:rotate(-5deg); }
+  25%  { left:40%; top:15%; transform:rotate(10deg); }
+  50%  { left:70%; top:40%; transform:rotate(-8deg); }
+  75%  { left:50%; top:20%; transform:rotate(5deg); }
+  100% { left:10%; top:30%; transform:rotate(-5deg); }
+}
+.broom-figure {
+  width: 40px; height: 30px;
+  position: relative;
+}
+.broom-stick {
+  position: absolute;
+  top: 50%; left: 0;
+  width: 100%; height: 3px;
+  background: linear-gradient(to right, #6a4020, #9a6030);
+  transform: translateY(-50%);
+  border-radius: 2px;
+}
+.broom-bristles {
+  position: absolute;
+  right: -4px; top: 40%;
+  width: 8px; height: 14px;
+  background: linear-gradient(to right, #8a6030, #c09040);
+  border-radius: 0 3px 3px 0;
+  transform: translateY(-50%);
+}
+.rider-dot {
+  position: absolute;
+  top: 10%; left: 30%;
+  width: 8px; height: 16px;
+  background: var(--rc,#c00);
+  border-radius: 3px 3px 0 0;
+}
+.snitch {
+  position: absolute;
+  width: 10px; height: 10px;
+  background: radial-gradient(circle at 35% 35%, #f0d060, #c09020);
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(240,200,60,0.8);
+  animation: snitchDart 2.5s ease-in-out infinite;
+}
+@keyframes snitchDart {
+  0%   {left:50%;top:50%;}
+  20%  {left:70%;top:30%;}
+  40%  {left:30%;top:60%;}
+  60%  {left:60%;top:70%;}
+  80%  {left:20%;top:40%;}
+  100% {left:50%;top:50%;}
+}
+.snitch-wing {
+  position: absolute;
+  top: -4px;
+  width: 14px; height: 8px;
+  background: rgba(240,240,255,0.7);
+  border-radius: 50%;
+  animation: snitchWing 0.15s ease-in-out infinite alternate;
+}
+.snitch-wing.left { right: 10px; transform: rotate(20deg); }
+.snitch-wing.right { left: 10px; transform: rotate(-20deg); animation-direction: alternate-reverse; }
+@keyframes snitchWing { from{scaleY:1;} to{transform:scaleY(0.3);} }
+.stadium-arc {
+  position: absolute;
+  bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 80%; height: 35%;
+  border: 3px solid #3a5a8a;
+  border-radius: 50% 50% 0 0 / 80% 80% 0 0;
+  border-bottom: none;
+  background: transparent;
+}
+
+/* SCENE 4: Prophet press / printing */
+.scene-press {
+  background: radial-gradient(ellipse at 50% 50%, #1e1208 0%, #0e0a04 100%);
+}
+.press-gear {
+  position: absolute;
+  border-radius: 50%;
+  border: 4px solid #6a4020;
+  background: transparent;
+  animation: gearSpin var(--gs,3s) linear infinite;
+  animation-direction: var(--gd,normal);
+}
+@keyframes gearSpin { to{transform:rotate(360deg);} }
+.gear-tooth {
+  position: absolute;
+  background: #6a4020;
+  transform-origin: bottom center;
+}
+.press-roller {
+  position: absolute;
+  background: linear-gradient(to bottom, #4a3018, #2a1a08, #4a3018);
+  border-radius: 4px;
+  animation: rollerMove 1s ease-in-out infinite alternate;
+}
+@keyframes rollerMove { from{transform:translateX(0);} to{transform:translateX(8px);} }
+.press-paper-strip {
+  position: absolute;
+  background: #f2e8d0;
+  animation: paperFeed 2s linear infinite;
+}
+@keyframes paperFeed {
+  from{transform:translateY(-100%);}
+  to{transform:translateY(200%);}
+}
+.press-ink-mark {
+  position: absolute;
+  background: #1a0a04;
+  font-family: 'UnifrakturMaguntia', cursive;
+  font-size: 8px;
+  color: var(--ink);
+  overflow: hidden;
+}
+
+/* SCENE 5: Dementor */
+.scene-dementor {
+  background: radial-gradient(ellipse at 50% 0%, #0a0820 0%, #04040e 100%);
+}
+.dementor-figure {
+  position: absolute;
+  left: 50%; top: 10%;
+  transform: translateX(-50%);
+  width: 30%; height: 70%;
+  animation: dementorHover 3s ease-in-out infinite;
+}
+@keyframes dementorHover {
+  0%,100%{transform:translateX(-50%) translateY(0) rotate(-2deg);}
+  50%{transform:translateX(-50%) translateY(-12px) rotate(2deg);}
+}
+.dem-cloak {
+  width:100%; height:100%;
+  background: radial-gradient(ellipse at 50% 10%, #1a1830, #06060e);
+  border-radius: 40% 40% 50% 50%;
+  position: relative;
+  box-shadow: 0 10px 40px rgba(0,0,60,0.4);
+}
+.dem-hand {
+  position: absolute;
+  bottom: 20%; 
+  width: 30%; height: 15%;
+  background: radial-gradient(ellipse, #1a1a2a, #080818);
+  border-radius: 30% 30% 50% 50%;
+  animation: handReach 3s ease-in-out infinite;
+  animation-delay: var(--del,0s);
+}
+.dem-hand.left { left: -20%; }
+.dem-hand.right { right: -20%; animation-direction: reverse; }
+@keyframes handReach {
+  0%,100%{transform:rotate(-10deg);}
+  50%{transform:rotate(10deg) translateY(8px);}
+}
+.soul-wisp {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(200,230,255,0.6), rgba(150,200,255,0.1));
+  animation: soulFloat var(--sw,4s) ease-in-out infinite;
+  animation-delay: var(--del,0s);
+  filter: blur(1px);
+}
+@keyframes soulFloat {
+  0%,100%{transform:translateY(0) scale(1); opacity:0.6;}
+  50%{transform:translateY(-20px) scale(1.2); opacity:0.9;}
+}
+.frost-overlay {
+  position: absolute; inset:0;
+  background: radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(180,200,255,0.08) 100%);
+  animation: frostPulse 3s ease-in-out infinite;
+}
+@keyframes frostPulse { 0%,100%{opacity:0.3;} 50%{opacity:0.8;} }
+
+/* ══════════════════════════════════════════
+   ADVERTISEMENT BOX
+══════════════════════════════════════════ */
+.advert {
+  border: 2px solid var(--border);
+  padding: 10px 14px;
+  background: rgba(200,180,140,0.2);
+  text-align: center;
+  margin: 8px 0;
+  position: relative;
+}
+.advert::before {
+  content: '✦ ADVERTISEMENT ✦';
+  position: absolute;
+  top: -7px; left: 50%; transform: translateX(-50%);
+  background: var(--paper);
+  padding: 0 6px;
+  font-family: 'IM Fell English', serif;
+  font-size: 8px;
+  letter-spacing: 0.15em;
+  color: var(--ink-light);
+}
+.advert-headline {
+  font-family: 'UnifrakturMaguntia', cursive;
+  font-size: clamp(14px,2vw,20px);
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.advert-body {
+  font-family: 'IM Fell English', serif;
+  font-style: italic;
+  font-size: clamp(9px,1.3vw,11px);
+  color: var(--ink-mid);
+  line-height: 1.5;
+}
+.advert-tagline {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(8px,1.2vw,10px);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-top: 6px;
+}
+
+/* ══════════════════════════════════════════
+   CLASSIFIEDS
+══════════════════════════════════════════ */
+.classifieds-header {
+  font-family: 'UnifrakturMaguntia', cursive;
+  font-size: clamp(16px,2.5vw,22px);
+  text-align: center;
+  border-top: 3px double var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 6px 0;
+  margin-bottom: 10px;
+  color: var(--ink);
+}
+.classified-item {
+  font-family: 'Libre Baskerville', serif;
+  font-size: clamp(8px,1.2vw,10px);
+  line-height: 1.6;
+  color: var(--ink-mid);
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px dotted var(--paper-deep);
+}
+.classified-item strong {
+  font-size: clamp(9px,1.3vw,11px);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ══════════════════════════════════════════
+   SECTION HEADER
+══════════════════════════════════════════ */
+.section-header {
+  font-family: 'IM Fell English', serif;
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--ink-light);
+  border-top: 2px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 4px 0;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+/* ══════════════════════════════════════════
+   REGENERATE BUTTON
+══════════════════════════════════════════ */
+#regen-btn {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  z-index: 1000;
+  font-family: 'Cinzel', 'Playfair Display', serif;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: #e8d090;
+  background: rgba(10,6,2,0.92);
+  border: 1px solid #6a4020;
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  text-transform: uppercase;
+}
+#regen-btn:hover {
+  color: #f0d060;
+  border-color: #c9943a;
+  box-shadow: 0 4px 30px rgba(200,150,50,0.3);
+}
+
+/* ══════════════════════════════════════════
+   INK REVEAL ANIMATION
+══════════════════════════════════════════ */
+.ink-reveal {
+  animation: inkReveal 0.8s ease forwards;
+  opacity: 0;
+}
+@keyframes inkReveal {
+  from { opacity:0; filter:blur(3px); transform:translateY(4px); }
+  to   { opacity:1; filter:blur(0); transform:translateY(0); }
+}
+
+/* Staggered delays */
+.ink-reveal:nth-child(1){animation-delay:0.1s;}
+.ink-reveal:nth-child(2){animation-delay:0.2s;}
+.ink-reveal:nth-child(3){animation-delay:0.3s;}
+.ink-reveal:nth-child(4){animation-delay:0.4s;}
+.ink-reveal:nth-child(5){animation-delay:0.5s;}
+
+/* ══════════════════════════════════════════
+   FOOTER
+══════════════════════════════════════════ */
+.paper-footer {
+  border-top: 3px double var(--border);
+  padding: 10px 28px 0;
+  display: flex;
+  justify-content: space-between;
+  font-family: 'IM Fell English', serif;
+  font-size: 10px;
+  color: var(--ink-light);
+  font-style: italic;
+  z-index: 2;
+  position: relative;
+}
+
+/* Responsive tweaks */
+@media(max-width:700px){
+  .col-grid.cols-3{grid-template-columns:1fr;}
+  .col-grid.cols-2{grid-template-columns:1fr;}
+  .col-grid.cols-2-rev{grid-template-columns:1fr;}
+  .col-grid.cols-4{grid-template-columns:1fr 1fr;}
+  .col-divider{border-left:none;padding-left:0;border-top:1px solid var(--border);padding-top:14px;}
+  #newspaper{margin:0; box-shadow:none;}
+}
+@media(max-width:480px){
+  .col-grid.cols-4{grid-template-columns:1fr;}
+  .masthead-nameplate h1{font-size:clamp(36px,10vw,56px);}
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading-screen">
+  <svg class="quill-svg" viewBox="0 0 80 120" xmlns="http://www.w3.org/2000/svg">
+    <path d="M 60 10 Q 70 5 75 15 Q 60 30 40 60 Q 30 80 25 100 L 20 105 L 22 95 Q 28 70 45 45 Q 55 25 60 10 Z" fill="#d4a830" opacity="0.9"/>
+    <path d="M 60 10 Q 65 8 68 14 Q 55 28 38 55 Q 30 72 26 90 L 24 95 Q 30 68 44 42 Q 56 22 60 10 Z" fill="#f0c040" opacity="0.7"/>
+    <line x1="25" y1="100" x2="15" y2="115" stroke="#8a5010" stroke-width="1.5" stroke-linecap="round"/>
+  </svg>
+  <div class="loading-title">The Daily Prophet</div>
+  <div class="loading-status">
+    Consulting the owls<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span>
+  </div>
+  <div class="ink-line"></div>
+</div>
+
+<!-- NEWSPAPER -->
+<div id="newspaper" style="display:none;">
+
+  <!-- MASTHEAD -->
+  <div class="masthead">
+    <div class="masthead-top">
+      <span class="masthead-motto">"Merlin's Own Truth Since 872 A.D."</span>
+      <span>✦ Delivered by Owl Post ✦</span>
+      <span class="masthead-price">Price: 1 Knut · Late Edition: 2 Knuts</span>
+    </div>
+    <div class="masthead-nameplate">
+      <h1>The Daily Prophet</h1>
+      <div class="edition-line">Britain's Finest Wizarding Publication</div>
+    </div>
+    <div class="masthead-bottom">
+      <span id="paper-date"></span>
+      <span>Vol. CCCXLII · Issue No. <span id="issue-no"></span></span>
+      <span class="weather-line" id="weather-line"></span>
+    </div>
+  </div>
+
+  <!-- BREAKING TICKER -->
+  <div class="breaking-ticker">
+    <div class="ticker-inner">
+      <div class="ticker-label">⚡ Breaking</div>
+      <div class="ticker-scroll">
+        <div class="ticker-text" id="ticker-text"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAPER BODY -->
+  <div class="paper-body" id="paper-body">
+    <!-- Content injected by JS -->
+  </div>
+
+  <!-- FOOTER -->
+  <div class="paper-footer">
+    <span>Printed by Obscurus Books, 18a Diagon Alley, London</span>
+    <span>✦ All owls registered with the Ministry ✦</span>
+    <span>Editor-in-Chief: R. Cuffe · Est. 872 A.D.</span>
+  </div>
+
+</div>
+
+<button id="regen-btn" onclick="generateEdition()">✦ New Edition ✦</button>
+
+<script>
+// ════════════════════════════════════════════════════════
+//  DATA POOLS
+// ════════════════════════════════════════════════════════
+const HEADLINES = [
+  { hed:"Dumbledore Spotted Dancing at Three Broomsticks; Refuses to Comment", deck:"Witnesses describe 'surprisingly nimble footwork' and a suspicious fondness for Butterbeer", byline:"Rita Skeeter, Senior Correspondent", scene:'cauldron' },
+  { hed:"Ministry Bans Use of Floo Network on Tuesdays — 'Congestion,' Says Fudge", deck:"Hundreds of witches and wizards left stranded mid-chimney across the British Isles", byline:"Barnabas Cuffe, Editor-in-Chief", scene:'press' },
+  { hed:"He-Who-Must-Not-Be-Named Loses Wand Down Sofa Cushion, Sources Confirm", deck:"Dark Lord reportedly 'quite vexed' and has been conducting searches since last Thursday", byline:"Special Correspondent (name withheld)", scene:'dementor' },
+  { hed:"Snape's Hair: A Closer Look at Wizarding Britain's Most Debated Grooming Choice", deck:"Experts weigh in on the potions master's legendary locks; Madam Pomfrey declines interview", byline:"Lavinia Inkblot, Style Correspondent", scene:'cauldron' },
+  { hed:"Dementors Stage Strike, Demand Better Work-Life Balance at Azkaban", deck:"'We simply cannot be expected to patrol in this weather,' says union representative", byline:"Deverill Plunkett, Ministry Affairs", scene:'dementor' },
+  { hed:"Quidditch World Cup Descends into Chaos After Snitch Refuses to Be Caught", deck:"Snitch spotted drinking tea in the commentary box; match suspended indefinitely", byline:"Ginny Weasley, Sports Correspondent", scene:'quidditch' },
+  { hed:"Hogwarts Ghost Census: 142 Registered Spirits, 17 Listed as 'Whereabouts Unknown'", deck:"Peeves once again declines to participate in official headcount, calls process 'frightful bore'", byline:"Xenophilius Lovegood, Contributing Writer", scene:'owl' },
+  { hed:"Buckbeak the Hippogriff Awarded Order of Merlin, Third Class — In Absentia", deck:"Ministry officials 'reasonably certain' recipient understood the honour; bowed three times", byline:"Cressida Thistlethwaite, Court Reporter", scene:'owl' },
+  { hed:"Bertie Bott's Recalls Entire Vomit Flavour Line Following 'Unexpected Accuracy'", deck:"Company founder calls results 'a scientific triumph poorly timed for market conditions'", byline:"Fiona Hardbroom, Consumer Affairs", scene:'cauldron' },
+  { hed:"Forbidden Forest Extends Itself Three Acres Overnight; Hagrid 'Very Pleased'", deck:"Centaurs have formally requested the Ministry stop sending surveyors with measuring sticks", byline:"Olympe Longbottom, Nature Correspondent", scene:'owl' },
+];
+
+const SECONDARY = [
+  { hed:"Madam Pomfrey Reports Record Number of Self-Transfiguration Injuries", deck:"Fifth-year student turned own nose into a cauliflower for third consecutive week", scene:'cauldron' },
+  { hed:"Weasley's Wizard Wheezes Posts Record Profits; George Weasley Laughs for Six Hours", deck:"New 'Portable Swamp' range blamed for eleven Ministry corridor incidents since September", scene:'press' },
+  { hed:"Trelawney Predicts Own Retirement; Immediately Predicts Own Un-Retirement", deck:"Inner Eye described as 'having a bit of a wobbly one' by colleagues", scene:'owl' },
+  { hed:"Niffler Empties Entire Gringotts Vault; Dragons 'Too Impressed to Stop It'", deck:"Beast escaped with seventeen gold rings, a chandelier, and a small but priceless portrait", scene:'cauldron' },
+  { hed:"Room of Requirement Found Containing Eleven Years of Lost Homework", deck:"Thousands of unfinished Transfiguration essays have achieved sentience; demanding grades", scene:'press' },
+  { hed:"Magical Britain's Wizard Chess Championship Disrupted as Queen Goes Rogue", deck:"'She wasn't following orders,' says tearful competitor, 'she had her own strategy'", scene:'quidditch' },
+  { hed:"Hogwarts Express Arrives Two Minutes Early; Ministry Launches Full Inquiry", deck:"'Unprecedented,' says Cornelius Fudge, 'and frankly, deeply suspicious'", scene:'press' },
+  { hed:"Gryffindor Common Room Portrait Demands Retroactive Pay for 700 Years of Service", deck:"Fat Lady's barrister says case is 'ironclad'; Hogwarts Board of Governors unavailable", scene:'owl' },
+];
+
+const BRIEFS = [
+  "Poltergeist Peeves awarded 'Employee of the Month' by mistake — Ministry investigating",
+  "Apparition test failure rate hits 84%; examiners blame 'fashionable splinching'",
+  "Flourish & Blotts reports strong sales of self-writing quill: 'Students love the plausible deniability'",
+  "Filch petitions for ninth time to be allowed to use magic; petition denied for ninth time",
+  "St Mungo's opens new ward dedicated entirely to Transfiguration accidents",
+  "Cornish Pixies ruled sentient by Wizengamot; educational implications 'staggering'",
+  "Dumbledore's pensieve auctioned — winning bidder 'had no idea what they bought'",
+  "The Sorting Hat releases statement clarifying it has 'never once enjoyed the job'",
+  "Divination O.W.L. results questioned after every student predicted top marks",
+  "Lumos charm deemed 'excessive' by Muggle hiking association after incident in Peak District",
+  "Mandrake screaming voted 'most unpleasant sound in magical Britain' for fourteenth consecutive year",
+];
+
+const CLASSIFIEDS = [
+  { title:"FOR SALE", body:"One slightly used Time-Turner. Some temporal entanglement. Previous owner unavailable for comment. Serious offers only. Box 7742." },
+  { title:"LOST", body:"Dark-coloured cloak of invisibility. Last seen not being seen. Sentimental value. Reward: one Galleon and a heartfelt thank-you. Contact H. Potter." },
+  { title:"SEEKING EMPLOYMENT", body:"Experienced Potions Master, highly qualified, seven years teaching experience, seeks position not involving students. Will relocate. References available." },
+  { title:"WANTED", body:"Responsible caretaker for three Blast-Ended Skrewts. Must have experience with fire, screaming, and emotional unavailability. Salary negotiable. Ask for Hagrid." },
+  { title:"FOR HIRE", body:"Professional curse-breaker available for parties, estate clearances, and mildly haunted homes. No job too cursed. Owl W. Weasley, Gringotts Bank." },
+  { title:"NOTICE", body:"The Society for the Promotion of Elfish Welfare (S.P.E.W.) meets Thursdays in the Hogwarts library. Membership: 2 Sickles. All are welcome. Secretary: H. Granger." },
+  { title:"AUCTION", body:"Fine collection of enchanted mirrors, each with a unique and unwanted opinion. Bidding starts at 5 Galleons. Silence charms not included." },
+  { title:"WEDDING ANNOUNCEMENT", body:"Mr Neville Longbottom and Miss Hannah Abbott are pleased to announce their engagement. No Herbology puns will be tolerated at the reception." },
+];
+
+const ADVERTS = [
+  { hed:"Madam Malkin's Robes", body:"For all occasions. First-year fittings available September. No appointment necessary. Ask about our Auror discount.", tag:"Est. 1643 · Diagon Alley" },
+  { hed:"Florean Fortescue's Ice Cream", body:"Twelve enchanted flavours. Memory-enhancing Raspberry. Mood-lifting Mint. The best ice cream in wizarding Britain, bar none.", tag:"Diagon Alley · Open Since 1876" },
+  { hed:"Nimbus Racing Brooms", body:"Speed. Precision. Glory. The Nimbus 2001 is simply the finest broom money can buy. Ask your Quidditch captain.", tag:"Nimbus Racing Broom Company Ltd." },
+  { hed:"Honeydukes Sweetshop", body:"Chocolate Frogs, Bertie Bott's Every Flavour Beans, Sugar Quills. Every sweet a small adventure. Children unattended since 1876.", tag:"High Street, Hogsmeade · Since 1641" },
+  { hed:"Obscurus Books", body:"The finest wizarding texts, catalogues, and periodicals. Special rates for Hogwarts staff. Bulk owl-post delivery available.", tag:"18a Diagon Alley · Publishing Since 1768" },
+];
+
+const WEATHER = [
+  "Forecast: Enchanted fog over Scotland. Bring a wand.",
+  "Sporadic pixie storms expected. Avoid open windows.",
+  "Unseasonably warm for November. Centaurs attribute to Jupiter.",
+  "Light dragon smoke south of Hebrides. Visibility: 40 yards.",
+  "Thunderstorms of unknown origin. Ministry investigating.",
+  "Clear skies. Ideal for night flying. Watch for Thestrals.",
+];
+
+const TICKERS = [
+  "Ministry of Magic confirms third Muggle-born promoted to Senior Undersecretary this decade •• Gringotts announces new security measures following Tuesday's incident involving a Niffler and fourteen goblins •• Quidditch fixtures suspended pending investigation into rogue Bludger in Devon •• Hogwarts confirms all students accounted for following last week's disappearance of the seventh-floor corridor •• ",
+  "Fudge denies all knowledge of werewolf sighting in Whitehall •• Diagon Alley footfall up 14% following reopening of Florean Fortescue's •• Auror division recruiting; no experience necessary, survival instincts essential •• Madam Trelawney has predicted the end of the world for the 47th time; Ministry untroubled •• ",
+  "Hogwarts Express delayed 9 minutes after owl collision outside Crewe •• Department of Mysteries denies there are more doors than last year •• St Mungo's reports record number of enchanted object injuries •• Magical Creatures Registry now includes 47 previously unknown species discovered in Hagrid's garden •• ",
+];
+
+const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+// ════════════════════════════════════════════════════════
+//  UTILITY
+// ════════════════════════════════════════════════════════
+function pick(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
+function shuffle(arr) { return [...arr].sort(()=>Math.random()-0.5); }
+function pickN(arr, n) { return shuffle(arr).slice(0,n); }
+
+function fakeDate() {
+  const d = Math.floor(Math.random()*27)+1;
+  const m = Math.floor(Math.random()*12);
+  const y = 1990 + Math.floor(Math.random()*15);
+  const day = pick(DAYS);
+  return `${day}, ${d} ${MONTHS[m]} ${y}`;
+}
+
+// ════════════════════════════════════════════════════════
+//  MOVING PHOTO / SCENE BUILDER
+// ════════════════════════════════════════════════════════
+function buildScene(type, caption) {
+  const scenes = {
+    cauldron: buildCauldronScene,
+    owl:      buildOwlScene,
+    quidditch:buildQuidditchScene,
+    press:    buildPressScene,
+    dementor: buildDementorScene,
+  };
+  const fn = scenes[type] || scenes.cauldron;
+  return `<div class="moving-photo">${fn()}<div class="photo-caption">${caption}</div></div>`;
+}
+
+function buildCauldronScene() {
+  const bubbles = Array.from({length:6},(_,i)=>`<div class="bubble" style="width:${4+Math.random()*6}px;height:${4+Math.random()*6}px;left:${30+Math.random()*40}%;bottom:${30+Math.random()*20}%;--bd:${1.5+Math.random()}s;--del:${Math.random()*2}s;"></div>`).join('');
+  const smokes = Array.from({length:3},(_,i)=>`<div class="smoke-wisp" style="--sd:${2.5+Math.random()}s;--del:${i*0.8}s;left:${40+i*8}%;"></div>`).join('');
+  return `<div class="photo-scene scene-cauldron">
+    <div class="cauldron-legs"><div class="cauldron-leg"></div><div class="cauldron-leg"></div><div class="cauldron-leg"></div></div>
+    <div class="cauldron-body"></div>
+    <div class="cauldron-brew"></div>
+    ${bubbles}
+    ${smokes}
+    <div class="figure-snape"><div class="snape-body"><div class="snape-arm"></div></div></div>
+  </div>`;
+}
+
+function buildOwlScene() {
+  const stars = Array.from({length:30},()=>`<div class="star-dot" style="width:${1+Math.random()*2}px;height:${1+Math.random()*2}px;left:${Math.random()*100}%;top:${Math.random()*60}%;--td:${1.5+Math.random()*3}s;--del:${Math.random()*3}s;"></div>`).join('');
+  const windows = Array.from({length:18},()=>`<div class="castle-window" style="width:${3+Math.random()*4}px;height:${4+Math.random()*5}px;left:${Math.random()*90+5}%;bottom:${5+Math.random()*30}%;--wf:${2+Math.random()*3}s;--del:${Math.random()*4}s;"></div>`).join('');
+  return `<div class="photo-scene scene-owl">
+    ${stars}
+    <div class="moon-circle"></div>
+    <div class="castle-silhouette"></div>
+    ${windows}
+    <div class="owl-body">
+      <svg class="owl-svg" viewBox="0 0 60 50" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="30" cy="28" rx="12" ry="14" fill="#c8a060"/>
+        <circle cx="30" cy="16" r="8" fill="#d0aa70"/>
+        <circle cx="25" cy="14" r="4" fill="#f0e0a0"/><circle cx="35" cy="14" r="4" fill="#f0e0a0"/>
+        <circle cx="25" cy="14" r="2" fill="#1a0a00"/><circle cx="35" cy="14" r="2" fill="#1a0a00"/>
+        <polygon points="30,18 27,22 33,22" fill="#d09030"/>
+        <path class="wing-left" d="M 18 28 Q 5 20 8 35 Q 15 38 22 35 Z" fill="#a07040"/>
+        <path class="wing-right" d="M 42 28 Q 55 20 52 35 Q 45 38 38 35 Z" fill="#a07040"/>
+      </svg>
+    </div>
+  </div>`;
+}
+
+function buildQuidditchScene() {
+  const players = ['#c00','#1a4a1a','#1a1a6a','#8a6010'].map((c,i)=>`
+    <div class="quidditch-player" style="--fp:${5+i*1.5}s;--del:${i*0.8}s;">
+      <div class="broom-figure">
+        <div class="broom-stick"></div>
+        <div class="broom-bristles"></div>
+        <div class="rider-dot" style="--rc:${c}"></div>
+      </div>
+    </div>`).join('');
+  return `<div class="photo-scene scene-quidditch">
+    ${players}
+    <div class="snitch" style="left:50%;top:50%;">
+      <div class="snitch-wing left"></div>
+      <div class="snitch-wing right"></div>
+    </div>
+    <div class="stadium-arc"></div>
+    <div style="position:absolute;bottom:0;left:0;right:0;height:20%;background:linear-gradient(to top,#0a1820,transparent);"></div>
+  </div>`;
+}
+
+function buildPressScene() {
+  const gears = [
+    {x:20,y:20,s:60,gs:'4s',gd:'normal'},{x:55,y:15,s:40,gs:'2.7s',gd:'reverse'},
+    {x:70,y:45,s:50,gs:'3.5s',gd:'normal'},{x:10,y:55,s:35,gs:'2s',gd:'reverse'}
+  ].map(g=>`<div class="press-gear" style="left:${g.x}%;top:${g.y}%;width:${g.s}px;height:${g.s}px;--gs:${g.gs};--gd:${g.gd};"></div>`).join('');
+  return `<div class="photo-scene scene-press" style="display:flex;align-items:center;justify-content:center;">
+    ${gears}
+    <div class="press-roller" style="left:35%;top:20%;width:30%;height:8%;"></div>
+    <div class="press-paper-strip" style="left:45%;top:0;width:10%;height:120%;"></div>
+    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+      <div style="font-family:'UnifrakturMaguntia',cursive;font-size:clamp(20px,4vw,36px);color:rgba(212,168,48,0.7);text-align:center;line-height:1.1;z-index:2;text-shadow:0 0 20px rgba(200,140,30,0.4);">The Daily<br>Prophet</div>
+    </div>
+  </div>`;
+}
+
+function buildDementorScene() {
+  const wisps = Array.from({length:5},(_,i)=>`<div class="soul-wisp" style="width:${20+Math.random()*30}px;height:${20+Math.random()*30}px;left:${10+Math.random()*80}%;top:${20+Math.random()*60}%;--sw:${3+Math.random()*2}s;--del:${i*0.6}s;"></div>`).join('');
+  return `<div class="photo-scene scene-dementor">
+    ${wisps}
+    <div class="dementor-figure">
+      <div class="dem-cloak">
+        <div class="dem-hand left" style="--del:0s;"></div>
+        <div class="dem-hand right" style="--del:0.5s;"></div>
+      </div>
+    </div>
+    <div class="frost-overlay"></div>
+  </div>`;
+}
+
+// ════════════════════════════════════════════════════════
+//  ARTICLE BODY TEXT GENERATOR
+// ════════════════════════════════════════════════════════
+const OPENERS = [
+  "In a development that has left the wizarding community deeply unsettled",
+  "Ministry officials confirmed late last night",
+  "Sources close to the matter, speaking on condition of anonymity",
+  "Hogwarts has once again found itself at the centre of extraordinary events",
+  "It was business as usual at the Ministry of Magic yesterday — or so officials claimed",
+  "Reliable sources within Diagon Alley have confirmed",
+  "What began as a routine Tuesday at Hogwarts Castle",
+  "The wizarding world awoke yesterday to news that",
+];
+const MIDDLES = [
+  "A spokesperson for the Ministry declined to comment, citing ongoing investigations into 'classified matters of outstanding national importance.'",
+  "Professor McGonagall, reached for comment, stated only that students were 'coping admirably under the circumstances,' though her expression suggested otherwise.",
+  "The incident, which unfolded over several hours, left witnesses 'shaken but largely intact,' according to Madam Pomfrey.",
+  "Dumbledore himself remained unavailable for comment, having been seen departing the castle on a large purple bicycle shortly before press time.",
+  "Aurors were dispatched to the scene, though sources suggest they found 'nothing out of the ordinary, which itself felt out of the ordinary.'",
+  "'I've seen worse,' said Hagrid, stroking what appeared to be a new and very large creature. 'Mostly worse, actually.'",
+  "Cornelius Fudge assured assembled reporters that 'everything is entirely under control,' a statement which served mainly to heighten concern.",
+];
+const CLOSERS = [
+  "The Daily Prophet will continue to report on this matter as it develops. We have reached out to all parties involved and await their inevitable non-response.",
+  "No injuries have been reported, though several students were treated for shock and at least one professor for 'severely wounded dignity.'",
+  "The investigation is ongoing. Citizens are advised to exercise caution and, if in doubt, consult their copies of Hogwarts: A History.",
+  "Officials stress there is no cause for alarm, a statement the Prophet notes is typically issued precisely when there is cause for alarm.",
+  "Full details are expected at a press conference tomorrow, assuming the Ministry can locate a room that hasn't wandered off.",
+];
+function genBody(sentences=3) {
+  const parts = [pick(OPENERS)+'. '+pick(MIDDLES)];
+  for(let i=1;i<sentences;i++) parts.push(pick(MIDDLES));
+  parts.push(pick(CLOSERS));
+  return parts.map(p=>`<p>${p}</p>`).join('');
+}
+
+// ════════════════════════════════════════════════════════
+//  MAIN GENERATION
+// ════════════════════════════════════════════════════════
+function generateEdition() {
+  document.getElementById('loading-screen').style.display='flex';
+  document.getElementById('loading-screen').style.opacity='1';
+  document.getElementById('newspaper').style.display='none';
+
+  // Simulate "fetching" time
+  setTimeout(()=>{ buildNewspaper(); }, 1200);
+}
+
+function buildNewspaper() {
+  // Meta
+  document.getElementById('paper-date').textContent = fakeDate();
+  document.getElementById('issue-no').textContent = Math.floor(Math.random()*9000)+1000;
+  document.getElementById('weather-line').textContent = pick(WEATHER);
+  document.getElementById('ticker-text').textContent = pick(TICKERS);
+
+  // Pick stories
+  const mainStory = pick(HEADLINES);
+  const usedHeds = new Set([mainStory.hed]);
+  const secondary = pickN(SECONDARY, 3);
+  const briefs = pickN(BRIEFS, 5);
+  const classifieds = pickN(CLASSIFIEDS, 4);
+  const advert = pick(ADVERTS);
+
+  // Scene captions
+  const CAPTIONS = {
+    cauldron: "Professor Snape demonstrates Advanced Draught of Living Death. (Moving photograph by D. Creevey)",
+    owl:      "Hogwarts owls return from evening post. (Ministry of Magic, Owl Post Office)",
+    quidditch:"Gryffindor vs Slytherin, match three. Snitch last sighted near commentary box. (W. Weasley, Sports)",
+    press:    "The Daily Prophet printing floor, Diagon Alley. (Archival photograph, 1987)",
+    dementor: "A Dementor near Azkaban, photographed at considerable personal risk. (Photographer requests anonymity)",
+  };
+  const mainCaption = CAPTIONS[mainStory.scene] || CAPTIONS.cauldron;
+  const secCaption  = CAPTIONS[pick(['owl','press','quidditch'])] || CAPTIONS.owl;
+
+  const body = document.getElementById('paper-body');
+  body.innerHTML = `
+
+    <!-- SECTION: FRONT PAGE -->
+    <div class="section-header">Front Page</div>
+
+    <!-- TOP STORY: 2-col, big hed + scene -->
+    <div class="col-grid cols-2 ink-reveal">
+      <div>
+        <div class="article-headline huge">${mainStory.hed}</div>
+        <div class="article-deck">${mainStory.deck}</div>
+        <div class="article-byline">By ${mainStory.byline}</div>
+        <div class="article-body">${genBody(4)}</div>
+      </div>
+      <div class="col-divider">
+        ${buildScene(mainStory.scene, mainCaption)}
+        <hr class="section-rule thin">
+        <div class="article-headline small">${secondary[0].hed}</div>
+        <div class="article-deck">${secondary[0].deck}</div>
+        <div class="article-body">${genBody(2)}</div>
+      </div>
+    </div>
+
+    <!-- 3-COL MID SECTION -->
+    <div class="col-grid cols-3 ink-reveal">
+      <div>
+        <div class="article-headline small italic-hed">${secondary[1].hed}</div>
+        <div class="article-byline">By ${pick(['O. Lovegood','A. Skeeter','B. Cuffe','T. Fawcett','V. Dursley'])}</div>
+        <div class="article-body">${genBody(2)}</div>
+      </div>
+      <div class="col-divider">
+        ${buildScene(secondary[1].scene || 'owl', secCaption)}
+      </div>
+      <div class="col-divider">
+        <div class="article-headline small">${secondary[2].hed}</div>
+        <div class="article-byline">By ${pick(['H. Granger','W. Weasley','N. Longbottom','L. Lovegood'])}</div>
+        <div class="article-body">${genBody(2)}</div>
+        <hr class="section-rule thin">
+        ${advert ? `<div class="advert">
+          <div class="advert-headline">${advert.hed}</div>
+          <div class="advert-body">${advert.body}</div>
+          <div class="advert-tagline">${advert.tag}</div>
+        </div>` : ''}
+      </div>
+    </div>
+
+    <!-- SECTION: INSIDE -->
+    <div class="section-header">News in Brief · Ministry Affairs · Society</div>
+
+    <!-- 4-COL BRIEFS -->
+    <div class="col-grid cols-4 ink-reveal">
+      ${briefs.map((b,i)=>`<div ${i>0?'class="col-divider"':''}>
+        <div class="article-headline small">◆ ${b.split(';')[0]}</div>
+        <div class="article-body"><p>${b.includes(';') ? b.split(';').slice(1).join(';').trim() : genBody(1).replace(/<\/?p>/g,'')}</p></div>
+      </div>`).join('')}
+    </div>
+
+    <!-- SECTION: SPORT + CLASSIFIEDS -->
+    <div class="section-header">Quidditch · Classifieds · Notices</div>
+
+    <div class="col-grid cols-2-rev ink-reveal">
+      <div>
+        <div class="classifieds-header">Classified Advertisements</div>
+        ${classifieds.map(c=>`<div class="classified-item"><strong>${c.title}:</strong> ${c.body}</div>`).join('')}
+      </div>
+      <div class="col-divider">
+        ${buildScene('quidditch','This week in Quidditch: full match reports, league tables, and broom reviews.')}
+        <div class="article-headline small" style="margin-top:10px;">Quidditch Round-Up: A Snitch in Dispute</div>
+        <div class="article-body">${genBody(2)}</div>
+      </div>
+    </div>
+
+  `;
+
+  // Show newspaper
+  const loading = document.getElementById('loading-screen');
+  const paper = document.getElementById('newspaper');
+  loading.style.opacity='0';
+  setTimeout(()=>{
+    loading.style.display='none';
+    paper.style.display='block';
+    window.scrollTo({top:0,behavior:'smooth'});
+  }, 1000);
+}
+
+// ════════════════════════════════════════════════════════
+//  BOOT
+// ════════════════════════════════════════════════════════
+window.addEventListener('load', ()=>{
+  setTimeout(()=>generateEdition(), 800);
+});
+</script>
+</body>
+</html>
